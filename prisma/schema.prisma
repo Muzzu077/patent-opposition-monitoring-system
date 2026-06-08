@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Role {
+  id    String @id
+  name  String @unique
+  users User[]
+
+  @@map("roles")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  password     String
+  roleId       String
+  role         Role     @relation(fields: [roleId], references: [id])
+  organization String?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model PatentCase {
+  id                    String       @id // e.g. PAT-2024-0892
+  title                 String
+  description           String       @db.Text
+  applicantName         String
+  applicantOrganization String
+  filingDate            String       // YYYY-MM-DD
+  category              String
+  status                String       // Submitted, Under Examination, Opposition Filed, Hearing Scheduled, Decision Pending, Approved, Rejected
+  priority              String       // High, Medium, Low
+  assignedOfficer       String
+  pendingDays           Int
+  ipcClassification     String
+  priorityDate          String
+  abstractSummary       String       @db.Text
+  updatedAt             DateTime     @updatedAt
+  oppositions           Opposition[]
+  documents             Document[]
+  hearings              Hearing[]
+
+  @@map("patent_cases")
+}
+
+model Opposition {
+  id                String     @id // e.g. OP-2023-9842
+  caseId            String
+  patentCase        PatentCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  opponentName      String
+  reason            String
+  detailedStatement String     @db.Text
+  submissionDate    String     // YYYY-MM-DD
+  status            String     // Pending, Under Review, Hearing Scheduled, Resolved
+  evidenceFiles     Json       // String array: e.g. ["Prior_Art_Conflict_US442.pdf"]
+  createdAt         DateTime   @default(now())
+
+  @@map("oppositions")
+}
+
+model Document {
+  id         String     @id @default(uuid())
+  name       String
+  size       String
+  uploadedBy String
+  uploadedAt DateTime   @default(now())
+  category   String     // Patent Application, Prior Art, Opposition Notice, Counter Statement, Hearing Notice, Decision
+  caseId     String
+  patentCase PatentCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  status     String?    // Approved, Pending Approval
+
+  @@map("documents")
+}
+
+model Hearing {
+  id               String     @id @default(uuid())
+  caseId           String
+  patentCase       PatentCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  date             String
+  time             String
+  location         String
+  presidingOfficer String
+  status           String     // Scheduled, Completed, Adjourned
+
+  @@map("hearings")
+}
+
+model SystemNotification {
+  id          String   @id @default(uuid())
+  type        String   // New Opposition, Hearing Scheduled, Deadline Approaching, Delay Alert, Decision Published
+  title       String
+  description String
+  timestamp   DateTime @default(now())
+  caseId      String
+  isRead      Boolean  @default(false)
+  severity    String   // info, warning, error
+
+  @@map("notifications")
+}
+
+model DelayAlert {
+  id          String   @id @default(uuid())
+  caseId      String
+  patentId    String
+  title       String
+  pendingDays Int
+  severity    String   // Green, Yellow, Orange, Red
+  message     String
+  createdAt   DateTime @default(now())
+
+  @@map("alerts")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  userName  String
+  userRole  String
+  action    String
+  details   String
+  timestamp DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  title       String
+  type        String   // Monthly, Delay, Officer Performance, Backlog
+  generatedBy String
+  generatedAt DateTime @default(now())
+  data        Json
+
+  @@map("reports")
+}

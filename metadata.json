@@ -1,0 +1,6 @@
+{
+  "name": "Patent Opposition Monitoring System (POMS)",
+  "description": "A comprehensive government-grade dashboard for administrative transparency, patent case monitoring, dispute resolution, and automated delay notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: poms-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: poms_admin
+      POSTGRES_PASSWORD: poms_secure_pass_2026
+      POSTGRES_DB: poms_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - poms-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U poms_admin -d poms_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: poms-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DATABASE_URL=postgresql://poms_admin:poms_secure_pass_2026@postgres:5432/poms_db?schema=public
+      - JWT_SECRET=poms_jwt_secret_token_key_2026
+      - NODE_ENV=production
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: poms-frontend
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
+
+volumes:
+  poms-db-data:
